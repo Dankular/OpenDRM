@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenDRM Player - Simple Embed</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 { color: #333; }
+    .player-container {
+      width: 100%;
+      max-width: 800px;
+      aspect-ratio: 16/9;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .info {
+      margin-top: 20px;
+      padding: 15px;
+      background: #fff;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>OpenDRM Player - Simple Embed</h1>
+
+  <!-- Option 1: Data attributes (auto-init) -->
+  <div class="player-container"
+       data-opendrm-player
+       data-manifest="https://storage.googleapis.com/shaka-demo-assets/sintel/dash.mpd"
+       data-license-server="http://localhost:3000"
+       data-token="YOUR_PLAYBACK_TOKEN">
+  </div>
+
+  <div class="info">
+    <strong>Usage:</strong><br>
+    1. Replace data-manifest with your encrypted content URL<br>
+    2. Replace data-license-server with your OpenDRM server URL<br>
+    3. Replace data-token with a valid playback token
+  </div>
+
+  <!-- Option 2: Programmatic initialization -->
+  <script>
+    // After OpenDRM embed script loads
+    document.addEventListener('DOMContentLoaded', async () => {
+      // You can also create players programmatically:
+      /*
+      const player = await OpenDRMEmbed.create({
+        container: '#my-player',
+        manifest: 'https://cdn.example.com/video/manifest.mpd',
+        licenseServer: 'http://localhost:3000',
+        token: 'YOUR_TOKEN',
+        autoplay: false,
+        onReady: () => console.log('Player ready'),
+        onError: (err) => console.error('Error:', err),
+      });
+
+      // Control the player
+      player.play();
+      player.pause();
+      player.seek(30);
+      player.setVolume(0.5);
+      */
+    });
+  </script>
+
+  <!-- Load the OpenDRM embed script -->
+  <script src="../packages/player-sdk/dist/embed.js"></script>
+</body>
+</html>

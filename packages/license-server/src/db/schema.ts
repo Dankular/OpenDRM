@@ -8,6 +8,7 @@ import {
   inet,
   text,
   index,
+  integer,
 } from 'drizzle-orm/pg-core';
 
 export const keys = pgTable(
@@ -62,6 +63,66 @@ export const licenseRequests = pgTable(
   (table) => ({
     createdAtIdx: index('license_requests_created_at_idx').on(table.createdAt),
     drmTypeIdx: index('license_requests_drm_type_idx').on(table.drmType),
+  })
+);
+
+// Webhooks for external integrations
+export const webhooks = pgTable(
+  'webhooks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    url: text('url').notNull(),
+    events: jsonb('events').notNull().$type<string[]>(),
+    secret: text('secret').notNull(),
+    status: varchar('status', { length: 20 }).default('active').notNull(),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    lastDeliveryAt: timestamp('last_delivery_at'),
+  },
+  (table) => ({
+    statusIdx: index('webhooks_status_idx').on(table.status),
+  })
+);
+
+// Webhook delivery log
+export const webhookDeliveries = pgTable(
+  'webhook_deliveries',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    webhookId: uuid('webhook_id').references(() => webhooks.id).notNull(),
+    event: varchar('event', { length: 50 }).notNull(),
+    payload: jsonb('payload').notNull(),
+    responseStatus: integer('response_status'),
+    responseBody: text('response_body'),
+    duration: integer('duration'), // ms
+    attempt: integer('attempt').default(1).notNull(),
+    success: boolean('success').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    webhookIdIdx: index('webhook_deliveries_webhook_id_idx').on(table.webhookId),
+    createdAtIdx: index('webhook_deliveries_created_at_idx').on(table.createdAt),
+  })
+);
+
+// API Keys for external integrations
+export const apiKeys = pgTable(
+  'api_keys',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: varchar('name', { length: 255 }).notNull(),
+    keyHash: text('key_hash').notNull(), // Hashed API key
+    keyPrefix: varchar('key_prefix', { length: 12 }).notNull(), // e.g., "sk_live_abc"
+    scopes: jsonb('scopes').notNull().$type<string[]>(),
+    status: varchar('status', { length: 20 }).default('active').notNull(),
+    lastUsedAt: timestamp('last_used_at'),
+    expiresAt: timestamp('expires_at'),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    keyPrefixIdx: index('api_keys_key_prefix_idx').on(table.keyPrefix),
+    statusIdx: index('api_keys_status_idx').on(table.status),
   })
 );
 
