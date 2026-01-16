@@ -1,0 +1,37 @@
+{
+  "name": "@opendrm/packager-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenDRM Content Packager Service - Shaka Packager Wrapper",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.500.0",
+    "@azure/storage-blob": "^12.17.0",
+    "@fastify/cors": "^9.0.0",
+    "@fastify/multipart": "^8.1.0",
+    "@google-cloud/storage": "^7.7.0",
+    "@grpc/grpc-js": "^1.10.0",
+    "@grpc/proto-loader": "^0.7.0",
+    "bullmq": "^5.1.0",
+    "fastify": "^4.26.0",
+    "pino": "^8.19.0",
+    "prom-client": "^15.1.0",
+    "uuid": "^9.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.2.0"
+  }
+}

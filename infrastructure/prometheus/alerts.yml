@@ -1,0 +1,107 @@
+# OpenDRM Prometheus Alert Rules
+
+groups:
+  - name: opendrm.license_server
+    rules:
+      # High license request error rate
+      - alert: HighLicenseErrorRate
+        expr: |
+          sum(rate(opendrm_license_requests_total{status="denied"}[5m])) /
+          sum(rate(opendrm_license_requests_total[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High license denial rate"
+          description: "More than 10% of license requests are being denied"
+
+      # License server down
+      - alert: LicenseServerDown
+        expr: up{job="license-server"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "License server is down"
+          description: "The license server has been unavailable for more than 1 minute"
+
+      # High license latency
+      - alert: HighLicenseLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(opendrm_license_request_duration_seconds_bucket[5m])) by (le)
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High license request latency"
+          description: "95th percentile license request latency is above 1 second"
+
+  - name: opendrm.packager
+    rules:
+      # Packager service down
+      - alert: PackagerServiceDown
+        expr: up{job="packager-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Packager service is down"
+          description: "The packager service has been unavailable for more than 1 minute"
+
+      # High packaging queue size
+      - alert: HighPackagingQueue
+        expr: opendrm_packaging_queue_size > 50
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High packaging queue size"
+          description: "More than 50 jobs waiting in the packaging queue"
+
+      # Packaging job failures
+      - alert: PackagingJobFailures
+        expr: |
+          sum(rate(opendrm_packaging_jobs_total{status="failed"}[15m])) > 0.1
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Packaging jobs are failing"
+          description: "Packaging jobs have been failing in the last 15 minutes"
+
+  - name: opendrm.infrastructure
+    rules:
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 90%"
+
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is above 90%"
+
+      # Disk space low
+      - alert: DiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"}) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space low"
+          description: "Less than 10% disk space remaining"

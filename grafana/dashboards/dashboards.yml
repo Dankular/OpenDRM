@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: 'OpenDRM'
+    orgId: 1
+    folder: 'OpenDRM'
+    folderUid: 'opendrm'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

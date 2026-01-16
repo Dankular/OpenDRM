@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  license-server:
+    build:
+      target: development
+    volumes:
+      - ./packages/license-server:/app
+      - /app/node_modules
+    command: pnpm run dev
+    environment:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+
+  packager-service:
+    build:
+      target: development
+    volumes:
+      - ./packages/packager-service:/app
+      - /app/node_modules
+    command: pnpm run dev
+    environment:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+
+  # Use local Caddy config for dev
+  caddy:
+    volumes:
+      - ./infrastructure/caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro

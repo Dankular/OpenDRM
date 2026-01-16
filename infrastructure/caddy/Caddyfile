@@ -1,0 +1,87 @@
+# OpenDRM Caddy Configuration
+# Edge server with automatic HTTPS
+
+{
+    # Global options
+    email admin@example.com
+
+    # Admin API (for debugging)
+    admin off
+
+    # Logging
+    log {
+        output stdout
+        format json
+    }
+}
+
+# Main site - replace with your domain
+:80, :443 {
+    # License Server API
+    handle /api/v1/license/* {
+        reverse_proxy license-server:3000
+    }
+
+    # Admin API (keys, content, auth)
+    handle /api/v1/* {
+        # Optional: Basic auth for admin endpoints
+        # basicauth {
+        #     admin $2a$14$... # bcrypt hash
+        # }
+        reverse_proxy license-server:3000
+    }
+
+    # Metrics endpoints
+    handle /metrics {
+        reverse_proxy license-server:3000
+    }
+
+    # Health check
+    handle /health {
+        reverse_proxy license-server:3000
+    }
+
+    # Content delivery through Varnish cache
+    handle /content/* {
+        reverse_proxy varnish:80
+    }
+
+    # Packager service
+    handle /packager/* {
+        uri strip_prefix /packager
+        reverse_proxy packager-service:3001
+    }
+
+    # Rate limiting for license endpoint
+    rate_limit {
+        zone license {
+            key {remote_host}
+            events 100
+            window 1m
+        }
+    }
+
+    # Headers
+    header {
+        # CORS headers
+        Access-Control-Allow-Origin *
+        Access-Control-Allow-Methods "GET, POST, OPTIONS"
+        Access-Control-Allow-Headers "Authorization, Content-Type"
+
+        # Security headers
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+
+        # Remove server header
+        -Server
+    }
+
+    # Compression
+    encode gzip
+
+    # Logging
+    log {
+        output stdout
+        format json
+    }
+}
