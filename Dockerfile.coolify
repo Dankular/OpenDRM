@@ -1,0 +1,22 @@
+FROM node:24-bookworm-slim AS build
+WORKDIR /app
+RUN npm install -g pnpm@9.15.0
+COPY . .
+RUN pnpm install --no-frozen-lockfile
+RUN pnpm --filter @opendrm/license-server build && pnpm --filter @opendrm/packager-service build
+FROM node:24-bookworm-slim AS common
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates ffmpeg && rm -rf /var/lib/apt/lists/*
+RUN npm install -g pnpm@9.15.0
+COPY --from=build /app /app
+COPY --from=build /app/proto /proto
+WORKDIR /app
+ENV NODE_ENV=production
+FROM common AS license
+WORKDIR /app/packages/license-server
+EXPOSE 3000 50051
+CMD ["sh", "-c", "pnpm run db:migrate && pnpm start"]
+FROM common AS packager
+RUN curl -fsSL https://github.com/shaka-project/shaka-packager/releases/download/v3.9.3/packager-linux-x64 -o /usr/bin/packager && chmod +x /usr/bin/packager && packager --version
+WORKDIR /app/packages/packager-service
+EXPOSE 3001
+CMD ["pnpm", "start"]

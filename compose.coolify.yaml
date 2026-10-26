@@ -1,0 +1,89 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: opendrm
+      POSTGRES_USER: opendrm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+    volumes:
+    - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U opendrm -d opendrm
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+    - redis-server
+    - --appendonly
+    - 'yes'
+    volumes:
+    - redis:/data
+    healthcheck:
+      test:
+      - CMD
+      - redis-cli
+      - ping
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  license-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.coolify
+      target: license
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://opendrm:${POSTGRES_PASSWORD:-}@postgres:5432/opendrm
+      REDIS_URL: redis://redis:6379
+      KEY_ENCRYPTION_SECRET: ${KEY_ENCRYPTION_SECRET:-}
+      JWT_SECRET: ${JWT_SECRET:-}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fsS
+      - http://127.0.0.1:3000/health
+      interval: 15s
+      timeout: 5s
+      retries: 15
+  packager-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.coolify
+      target: packager
+    restart: unless-stopped
+    environment:
+      REDIS_URL: redis://redis:6379
+      LICENSE_SERVER_GRPC_URL: license-server:50051
+      STORAGE_BACKEND: local
+      LOCAL_STORAGE_PATH: /data/content
+      SHAKA_PACKAGER_PATH: /usr/bin/packager
+      NODE_ENV: production
+    volumes:
+    - content:/data/content
+    depends_on:
+      license-server:
+        condition: service_healthy
+  content:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.content
+    restart: unless-stopped
+    volumes:
+    - content:/content:ro
+volumes:
+  postgres: {}
+  redis: {}
+  content: {}
